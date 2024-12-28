@@ -121,8 +121,8 @@ const ExploreScreen: React.FC = () => {
 
       {/* Loading State */}
       {isFetching && (
-        <div className="flex justify-center mt-4 opacity-0 transition-opacity duration-500 ease-in-out">
-          <p className="text-lg text-gray-600">Loading more stocks...</p>
+        <div className="flex justify-center mt-4 opacity-0 animate-fadeIn">
+          <Spinner size={30} color="#2563eb" />
         </div>
       )}
     </div>
