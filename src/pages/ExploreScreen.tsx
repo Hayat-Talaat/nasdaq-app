@@ -66,7 +66,7 @@ const ExploreScreen: React.FC = () => {
           const isLastStock = index === stocks.length - 1;
           return (
             <div
-              key={stock.ticker}
+              key={index}
               ref={isLastStock ? lastStockRef : null}
               className="p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition-shadow"
             >
