@@ -9,6 +9,7 @@ const ExploreScreen: React.FC = () => {
   const [page, setPage] = useState(1);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
@@ -53,6 +54,13 @@ const ExploreScreen: React.FC = () => {
     setStocks([]);
   }, [debouncedSearchTerm]);
 
+  // Trigger visibility after component mounts
+  useEffect(() => {
+    setTimeout(() => {
+      setIsVisible(true);
+    }, 1000);
+  }, []);
+
   if (isLoading && page === 1) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -72,30 +80,45 @@ const ExploreScreen: React.FC = () => {
   }
 
   return (
-    <div className="p-6 bg-gradient-to-r from-green-100 to-blue-100 min-h-screen">
-      <h1 className="text-2xl font-bold mb-4 text-center text-blue-800">
-        Nasdaq Stocks
-      </h1>
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search stocks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border border-gray-300 rounded-lg"
-        />
+    <div className="p-6 bg-gradient-to-r bg-gray-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-extrabold text-blue-900">
+            Nasdaq Stocks
+          </h1>
+          <p className="text-gray-600 text-sm">
+            Search and explore the stock market.
+          </p>
+        </div>
+
+        {/* Search Bar */}
+        <div className="w-1/3 ml-4">
+          <input
+            type="text"
+            placeholder="Search stocks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-4 border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          />
+        </div>
       </div>
 
+      {/* Empty State - No Stocks Found */}
       {stocks.length === 0 && !isLoading && !isFetching && (
-        <div className="flex justify-center mt-10">
+        <div className="flex justify-center items-center mt-10">
           <p className="text-lg text-gray-600">No stocks found.</p>
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Stock Cards */}
+      <div
+        className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-1000 ease-in-out ${
+          isVisible ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
         {stocks.map((stock, index) => {
           const isLastStock = index === stocks.length - 1;
-
           return (
             <StockCard
               key={index}
@@ -106,8 +129,9 @@ const ExploreScreen: React.FC = () => {
         })}
       </div>
 
+      {/* Loading State */}
       {isFetching && (
-        <div className="flex justify-center mt-4">
+        <div className="flex justify-center mt-4 opacity-0 transition-opacity duration-500 ease-in-out">
           <p className="text-lg text-gray-600">Loading more stocks...</p>
         </div>
       )}
