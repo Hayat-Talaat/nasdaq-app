@@ -5,6 +5,7 @@ import { Stock } from "../types";
 // components
 import StockCard from "../components/StockCard";
 import SearchBar from "../components/SearchBar";
+import Spinner from "../components/Spinner";
 
 const ExploreScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -65,8 +66,8 @@ const ExploreScreen: React.FC = () => {
 
   if (isLoading && page === 1) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <p className="text-lg text-gray-600">Loading stocks...</p>
+      <div className="flex justify-center items-center h-screen ">
+        <Spinner size={60} color="#2563eb" />
       </div>
     );
   }
