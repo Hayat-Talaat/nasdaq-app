@@ -1,16 +1,21 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useGetStocksQuery } from "../features/stocks/stocksApi";
 import { Stock } from "../types";
+import useDebounce from "../hooks/useDebounce";
 
 const ExploreScreen: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
+
+  const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
   const { data, error, isLoading, isFetching } = useGetStocksQuery({
     active: true,
     limit: 21,
     page,
+    search: debouncedSearchTerm,
   });
 
   const observer = useRef<IntersectionObserver | null>(null);
@@ -31,12 +36,21 @@ const ExploreScreen: React.FC = () => {
     [isFetchingMore]
   );
 
+  // Update stocks when new data is received
   useEffect(() => {
     if (data?.results) {
-      setStocks((prevStocks) => [...prevStocks, ...data.results]);
+      setStocks((prevStocks) =>
+        page === 1 ? data.results : [...prevStocks, ...data.results]
+      );
       setIsFetchingMore(false);
     }
-  }, [data]);
+  }, [data, page]);
+
+  // Reset stocks when search term changes
+  useEffect(() => {
+    setPage(1);
+    setStocks([]);
+  }, [debouncedSearchTerm]);
 
   if (isLoading && page === 1) {
     return (
@@ -61,6 +75,22 @@ const ExploreScreen: React.FC = () => {
       <h1 className="text-2xl font-bold mb-4 text-center text-blue-800">
         Nasdaq Stocks
       </h1>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search stocks..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-lg"
+        />
+      </div>
+
+      {stocks.length === 0 && !isLoading && !isFetching && (
+        <div className="flex justify-center mt-10">
+          <p className="text-lg text-gray-600">No stocks found.</p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {stocks.map((stock, index) => {
           const isLastStock = index === stocks.length - 1;
