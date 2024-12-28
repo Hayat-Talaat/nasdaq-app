@@ -24,7 +24,7 @@ const ErrorMsg: React.FC<ErrorMsgProps> = ({ error, onRetry }) => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={onRetry}
-            className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition-all"
+            className="w-full sm:w-auto px-6 py-2 bg-blue-800 text-white rounded-lg shadow-md hover:bg-blue-900 transition-all"
           >
             Retry
           </button>

@@ -8,6 +8,7 @@ import StockCard from "../components/StockCard";
 import SearchBar from "../components/SearchBar";
 import Spinner from "../components/Spinner";
 import ErrorMsg from "../components/ErrorMsg";
+import NoDataFound from "../components/NoDataFound";
 
 const ExploreScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,9 +97,7 @@ const ExploreScreen: React.FC = () => {
 
       {/* Empty State - No Stocks Found */}
       {stocks.length === 0 && !isLoading && !isFetching && (
-        <div className="flex justify-center items-center mt-10">
-          <p className="text-lg text-gray-600">No stocks found.</p>
-        </div>
+        <NoDataFound onRetry={() => refetch()} />
       )}
 
       {/* Stock Cards */}
