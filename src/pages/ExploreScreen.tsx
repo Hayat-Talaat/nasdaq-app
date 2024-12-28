@@ -2,10 +2,12 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useGetStocksQuery } from "../features/stocks/stocksApi";
 import useDebounce from "../hooks/useDebounce";
 import { Stock } from "../types";
+
 // components
 import StockCard from "../components/StockCard";
 import SearchBar from "../components/SearchBar";
 import Spinner from "../components/Spinner";
+import ErrorMsg from "../components/ErrorMsg";
 
 const ExploreScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -16,7 +18,7 @@ const ExploreScreen: React.FC = () => {
 
   const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
-  const { data, error, isLoading, isFetching } = useGetStocksQuery({
+  const { data, error, isLoading, isFetching, refetch } = useGetStocksQuery({
     active: true,
     limit: 21,
     page,
@@ -73,13 +75,7 @@ const ExploreScreen: React.FC = () => {
   }
 
   if (error) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-100">
-        <p className="text-lg text-red-600">
-          Failed to fetch stocks. Please try again later.
-        </p>
-      </div>
-    );
+    return <ErrorMsg error={error} onRetry={() => refetch()} />;
   }
 
   return (
