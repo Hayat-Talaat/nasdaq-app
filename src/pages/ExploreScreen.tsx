@@ -1,8 +1,10 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useGetStocksQuery } from "../features/stocks/stocksApi";
-import { Stock } from "../types";
 import useDebounce from "../hooks/useDebounce";
+import { Stock } from "../types";
+// components
 import StockCard from "../components/StockCard";
+import SearchBar from "../components/SearchBar";
 
 const ExploreScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -92,15 +94,7 @@ const ExploreScreen: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="w-1/3 ml-4">
-          <input
-            type="text"
-            placeholder="Search stocks..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-4 border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-          />
-        </div>
+        <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
 
       {/* Empty State - No Stocks Found */}
@@ -116,7 +110,6 @@ const ExploreScreen: React.FC = () => {
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"> */}
         {stocks.map((stock, index) => {
           const isLastStock = index === stocks.length - 1;
           return (
