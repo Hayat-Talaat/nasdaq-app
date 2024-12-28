@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useGetStocksQuery } from "../features/stocks/stocksApi";
 import { Stock } from "../types";
 import useDebounce from "../hooks/useDebounce";
+import StockCard from "../components/StockCard";
 
 const ExploreScreen: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,23 +92,20 @@ const ExploreScreen: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {stocks.map((stock, index) => {
           const isLastStock = index === stocks.length - 1;
+
           return (
-            <div
+            <StockCard
               key={index}
+              stock={stock}
               ref={isLastStock ? lastStockRef : null}
-              className="p-4 bg-white shadow-md rounded-lg hover:shadow-lg transition-shadow"
-            >
-              <p className="text-lg font-medium text-gray-800">
-                {stock.ticker}
-              </p>
-              <p className="text-sm text-gray-600">{stock.name}</p>
-            </div>
+            />
           );
         })}
       </div>
+
       {isFetching && (
         <div className="flex justify-center mt-4">
           <p className="text-lg text-gray-600">Loading more stocks...</p>
