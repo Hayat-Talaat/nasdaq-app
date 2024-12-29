@@ -9,6 +9,8 @@ import ErrorMsg from "../components/ErrorMsg";
 import SearchBar from "../components/SearchBar";
 import NoDataFound from "../components/NoDataFound";
 
+const MAX_REQUESTS_PER_MINUTE = 3;
+
 const StocksList: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
@@ -19,19 +21,50 @@ const StocksList: React.FC = () => {
   const observer = useRef<IntersectionObserver | null>(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
-  const loadStocks = async (
-    cursor: string | null = null,
-    search: string = ""
-  ) => {
-    try {
-      const response = await fetchStocks({ cursor, search }).unwrap();
-      setStocks((prev) =>
-        cursor ? [...prev, ...response.results] : response.results
-      );
-      setNextUrl(response.nextUrl);
-    } catch (err) {
-      console.error("Error fetching stocks:", err);
+  const requestCounter = useRef<number>(0);
+  const requestQueue: (() => void)[] = [];
+
+  const processQueue = () => {
+    if (
+      requestQueue.length > 0 &&
+      requestCounter.current < MAX_REQUESTS_PER_MINUTE
+    ) {
+      const request = requestQueue.shift();
+      if (request) {
+        request();
+      }
     }
+  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      requestCounter.current = 0;
+      processQueue();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const throttledRequest = (request: () => void) => {
+    if (requestCounter.current < MAX_REQUESTS_PER_MINUTE) {
+      requestCounter.current += 1;
+      request();
+    } else {
+      requestQueue.push(request);
+    }
+  };
+
+  const loadStocks = (cursor: string | null = null, search: string = "") => {
+    throttledRequest(async () => {
+      try {
+        const response = await fetchStocks({ cursor, search }).unwrap();
+        setStocks((prev) =>
+          cursor ? [...prev, ...response.results] : response.results
+        );
+        setNextUrl(response.nextUrl);
+      } catch (err) {
+        console.error("Error fetching stocks:", err);
+      }
+    });
   };
 
   const lastElementRef = useCallback(
