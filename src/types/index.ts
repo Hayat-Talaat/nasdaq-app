@@ -14,6 +14,14 @@ export interface Stock {
   ticker: string;
 }
 
+export interface StockResponse {
+  results: Stock[];
+  status: string;
+  request_id: string;
+  count: number;
+  next_url: string;
+}
+
 export interface ErrorData {
   status: string;
   request_id: string;

@@ -1,82 +1,83 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { useGetStocksQuery } from "../features/stocks/stocksApi";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useLazyGetStocksQuery } from "../features/stocks/stocksApi";
 import useDebounce from "../hooks/useDebounce";
 import { Stock } from "../types";
-
-// components
+// Components
 import StockCard from "../components/StockCard";
-import SearchBar from "../components/SearchBar";
 import Spinner from "../components/Spinner";
 import ErrorMsg from "../components/ErrorMsg";
+import SearchBar from "../components/SearchBar";
 import NoDataFound from "../components/NoDataFound";
 
-const ExploreScreen: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
+const StocksList: React.FC = () => {
   const [stocks, setStocks] = useState<Stock[]>([]);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
+  const [fetchStocks, { isFetching, error }] = useLazyGetStocksQuery();
+  const observer = useRef<IntersectionObserver | null>(null);
   const debouncedSearchTerm = useDebounce(searchTerm, 1000);
 
-  const { data, error, isLoading, isFetching, refetch } = useGetStocksQuery({
-    active: true,
-    limit: 21,
-    page,
-    search: debouncedSearchTerm,
-  });
+  const loadStocks = async (
+    cursor: string | null = null,
+    search: string = ""
+  ) => {
+    try {
+      const response = await fetchStocks({ cursor, search }).unwrap();
+      setStocks((prev) =>
+        cursor ? [...prev, ...response.results] : response.results
+      );
+      setNextUrl(response.nextUrl);
+    } catch (err) {
+      console.error("Error fetching stocks:", err);
+    }
+  };
 
-  const observer = useRef<IntersectionObserver | null>(null);
-  const lastStockRef = useCallback(
+  const lastElementRef = useCallback(
     (node: HTMLDivElement | null) => {
-      if (isFetchingMore) return;
-
+      if (isFetching) return;
       if (observer.current) observer.current.disconnect();
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting) {
-          setIsFetchingMore(true);
-          setPage((prev) => prev + 1);
+        if (entries[0].isIntersecting && nextUrl) {
+          loadStocks(nextUrl, debouncedSearchTerm);
         }
       });
-
       if (node) observer.current.observe(node);
     },
-    [isFetchingMore]
+    [isFetching, nextUrl, debouncedSearchTerm]
   );
 
-  // Update stocks when new data is received
   useEffect(() => {
-    if (data?.results) {
-      setStocks((prevStocks) =>
-        page === 1 ? data.results : [...prevStocks, ...data.results]
-      );
-      setIsFetchingMore(false);
-    }
-  }, [data, page]);
-
-  // Reset stocks when search term changes
-  useEffect(() => {
-    setPage(1);
-    setStocks([]);
+    loadStocks(null, debouncedSearchTerm);
   }, [debouncedSearchTerm]);
 
-  // Trigger visibility after component mounts
   useEffect(() => {
     setTimeout(() => {
       setIsVisible(true);
     }, 1000);
+    loadStocks();
   }, []);
 
-  if (isLoading && page === 1) {
+  if (isFetching && stocks.length === 0) {
     return (
-      <div className="flex justify-center items-center h-screen ">
-        <Spinner size={60} color="#2563eb" />
+      <div className="flex justify-center items-center h-screen">
+        <Spinner size={50} color="#2563eb" />
       </div>
     );
   }
 
   if (error) {
-    return <ErrorMsg error={error} onRetry={() => refetch()} />;
+    return (
+      <ErrorMsg
+        error={error}
+        onRetry={() => loadStocks(null, debouncedSearchTerm)}
+      />
+    );
+  }
+
+  if (!isFetching && stocks.length === 0) {
+    return <NoDataFound onRetry={() => loadStocks(null, "")} />;
   }
 
   return (
@@ -94,38 +95,31 @@ const ExploreScreen: React.FC = () => {
         {/* Search Bar */}
         <SearchBar searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
       </div>
-
-      {/* Empty State - No Stocks Found */}
-      {stocks.length === 0 && !isLoading && !isFetching && (
-        <NoDataFound onRetry={() => refetch()} />
-      )}
-
-      {/* Stock Cards */}
       <div
         className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-1000 ease-in-out ${
           isVisible ? "opacity-100" : "opacity-0"
         }`}
       >
         {stocks.map((stock, index) => {
-          const isLastStock = index === stocks.length - 1;
-          return (
-            <StockCard
-              key={index}
-              stock={stock}
-              ref={isLastStock ? lastStockRef : null}
-            />
-          );
+          return <StockCard key={index} stock={stock} />;
         })}
       </div>
 
-      {/* Loading State */}
-      {isFetching && (
-        <div className="flex justify-center mt-4 opacity-0 animate-fadeIn">
-          <Spinner size={30} color="#2563eb" />
-        </div>
-      )}
+      {/* Infinite Scroll Sentinel */}
+      <div ref={lastElementRef} style={{ height: "20px", marginTop: "10px" }}>
+        {isFetching && (
+          <div className="flex justify-center">
+            <Spinner size={30} color="#2563eb" />{" "}
+          </div>
+        )}
+        {!nextUrl && stocks.length > 0 && (
+          <p className="text-center text-gray-500 mt-4">
+            No more stocks to load
+          </p>
+        )}
+      </div>
     </div>
   );
 };
 
-export default ExploreScreen;
+export default StocksList;
